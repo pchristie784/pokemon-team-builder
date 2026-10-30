@@ -37,9 +37,11 @@ export class DataSnapshot {
   private readonly megaForms = new Map<SpeciesId, Species>();
   private readonly slugs = new Map<SpeciesId, string>();
   private readonly searchText = new Map<SpeciesId, string>();
+  private readonly machineLabels = new Map<MoveId, string>();
 
   constructor(private readonly raw: RawSnapshot) {
     this.version = { hackVersion: raw.version.hackVersion, fetchedAt: raw.version.fetchedAt };
+    for (const m of raw.machines) this.machineLabels.set(m.move, m.label);
     const megaIds = new Set(raw.speciesMeta.megaEvolutions.map((m) => m.target));
     // SPECIES_ZYGARDE_MEGA is categorised "mega" but has no megaEvolutions entry.
     for (const s of raw.species) if (s.categories.includes('mega')) megaIds.add(s.constant);
@@ -104,6 +106,11 @@ export class DataSnapshot {
     };
   }
 
+  /** The TM/HM label ("TM04", "HM03") teaching a move, if any. */
+  getMachineLabel(id: MoveId): string | undefined {
+    return this.machineLabels.get(id);
+  }
+
   /** Raw learnset (level-up, TM/HM, tutor, egg) for a Species or Mega form. */
   getLearnset(id: SpeciesId): Pick<RawSpeciesDetails, 'levelUp' | 'tmhm' | 'tutors' | 'eggMoves'> | undefined {
     const slug = this.slugs.get(id);
@@ -139,7 +146,7 @@ function parseSpecies(s: RawSpecies, displayName: string): Species {
     stats: s.stats,
     regularAbilities: [...new Set(s.regularAbilities)],
     hiddenAbilities: [...new Set(s.hiddenAbilities)],
-    innates: s.innates,
+    innates: [...new Set(s.innates)],
     categories: s.categories,
     sprite: s.sprite,
   };

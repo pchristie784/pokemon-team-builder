@@ -1,4 +1,5 @@
 import { MAX_TEAM_MEMBERS, type TeamId } from '../domain';
+import { BoxMemberPicker } from './BoxMemberPicker';
 import { SpeciesSearch } from './SpeciesSearch';
 import { TeamMemberCard } from './TeamMemberCard';
 import { useTeamBuilder } from './useTeamBuilder';
@@ -14,11 +15,15 @@ export function TeamEditor({ teamId }: { teamId: TeamId }) {
           ({team.members.length}/{MAX_TEAM_MEMBERS})
         </span>
       </h2>
-      <SpeciesSearch
-        disabled={team.isFull}
-        disabledReason={`A Team has at most ${MAX_TEAM_MEMBERS} Team Members`}
-        onPick={(speciesId) => builder.addTeamMember(teamId, speciesId)}
-      />
+      {builder.getMode() === 'BOX' ? (
+        <BoxMemberPicker teamId={teamId} disabled={team.isFull} />
+      ) : (
+        <SpeciesSearch
+          disabled={team.isFull}
+          disabledReason={`A Team has at most ${MAX_TEAM_MEMBERS} Team Members`}
+          onPick={(speciesId) => builder.addTeamMember(teamId, speciesId)}
+        />
+      )}
       <ol className="team-members">
         {team.members.map((member) => (
           <li key={member.id}>

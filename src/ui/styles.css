@@ -36,6 +36,7 @@ h1, h2, h3 { margin: 0; }
 .team-member-card dt { color: var(--muted); font-size: 0.8rem; }
 .team-member-card dd { margin: 0; }
 .innates { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.ability-picker { width: 100%; max-width: 100%; font: inherit; margin-bottom: 4px; }
 .remove { font-size: 0.8rem; background: none; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
 
 .type-badges { display: inline-flex; gap: 4px; }
@@ -46,3 +47,68 @@ h1, h2, h3 { margin: 0; }
 .type-flying { background: #81b9ef; } .type-psychic { background: #ef4179; } .type-bug { background: #91a119; }
 .type-rock { background: #afa981; } .type-ghost { background: #704170; } .type-dragon { background: #5060e1; }
 .type-dark { background: #624d4e; } .type-steel { background: #60a1b8; } .type-fairy { background: #ef70ef; }
+
+/* Critique: Defensive Coverage */
+.critique-panel { margin-top: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.critique-panel h2 { font-size: 1.15rem; margin-bottom: 8px; }
+.critique-panel h3 { font-size: 1rem; margin-bottom: 8px; }
+.critique-flags { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.flag { font-size: 0.85rem; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); }
+.flag-bad { border-color: #d64545; background: #fdecec; }
+.flag-warn { border-color: #d4a800; background: #fdf6dc; }
+.coverage-table { border-collapse: collapse; font-size: 0.85rem; width: 100%; max-width: 420px; }
+.coverage-table th, .coverage-table td { padding: 3px 8px; border-bottom: 1px solid var(--border); text-align: center; }
+.coverage-table th:first-child, .coverage-table td:first-child { text-align: left; }
+.row-bad { background: #fdecec; }
+.row-warn { background: #fdf6dc; }
+
+/* Saved Teams and settings */
+.settings-bar { margin-left: auto; font-size: 0.9rem; }
+.settings-bar select { font: inherit; padding: 2px 6px; }
+.team-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.team-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.team-tab { font: inherit; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.team-tab.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); font-weight: 600; }
+.team-list-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.9rem; }
+.team-list-actions input { font: inherit; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; }
+.team-list-actions button { font: inherit; background: none; border: 1px solid var(--border); border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+
+/* Stat Roles (ticket 06) */
+.stat-roles { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.stat-role { font-size: 0.75rem; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+.stat-role-fast, .stat-role-tank { color: inherit; font-weight: 600; }
+
+/* Moves and Offensive Coverage */
+.move-picker { display: flex; flex-direction: column; gap: 6px; }
+.chosen-moves { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 3px; }
+.chosen-moves li { display: flex; align-items: center; gap: 6px; }
+.chosen-moves .remove { margin-left: auto; padding: 0 6px; }
+.move-picker-toggle { align-self: flex-start; font: inherit; font-size: 0.8rem; background: none; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+.move-picker-list input { width: 100%; padding: 4px 6px; font: inherit; border: 1px solid var(--border); border-radius: 4px; }
+.move-picker-list ul { list-style: none; margin: 4px 0 0; padding: 0; max-height: 260px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px; }
+.move-picker-list button { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 0 8px; padding: 4px 6px; background: none; border: 0; border-bottom: 1px solid var(--border); font: inherit; font-size: 0.8rem; text-align: left; cursor: pointer; }
+.move-picker-list button:hover:not(:disabled), .move-picker-list button:focus { background: var(--bg); }
+.move-picker-list button:disabled { cursor: not-allowed; opacity: 0.6; }
+.move-name { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.move-stats { text-align: right; }
+.move-sources { grid-column: 1 / -1; color: var(--muted); }
+.offensive-coverage { margin-top: 16px; }
+.offensive-table { max-width: none; }
+.offensive-table td.covered-by { text-align: left; font-size: 0.8rem; color: var(--muted); }
+.mega-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.mega-toggle select { font: inherit; max-width: 100%; }
+.mega-ability, .mega-blocked { font-size: 0.85em; opacity: 0.8; }
+
+/* Box, Box Mode and Planned Evolutions (ticket 09) */
+.mode-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.mode-toggle button { font: inherit; font-size: 0.85rem; padding: 4px 10px; background: var(--surface); color: var(--text); border: 0; cursor: pointer; }
+.mode-toggle button.active { background: var(--accent); color: #fff; }
+.box-manager { margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.box-manager h2 { font-size: 1.15rem; margin-bottom: 8px; }
+.box-entries { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.box-entry { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.box-entry-main { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.box-entry-level input { width: 4.5em; font: inherit; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; }
+.box-entry-evolutions { font-size: 0.8rem; margin: 4px 0 0; }
+.planned-marker { font-size: 0.75rem; font-weight: normal; margin-left: 6px; padding: 1px 6px; border-radius: 4px; border: 1px dashed var(--accent); color: var(--accent); }
+.level-flag { color: var(--accent); font-weight: 600; }

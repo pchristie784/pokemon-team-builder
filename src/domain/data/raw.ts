@@ -66,6 +66,15 @@ export interface RawMove {
   category: 'DAMAGE_CATEGORY_PHYSICAL' | 'DAMAGE_CATEGORY_SPECIAL' | 'DAMAGE_CATEGORY_STATUS';
 }
 
+/** One TM or HM from machines.json. */
+export interface RawMachine {
+  kind: 'TM' | 'HM';
+  number: number;
+  move: string;
+  /** e.g. "TM04", "HM03". */
+  label: string;
+}
+
 export interface RawAbility {
   constant: string;
   name: string;
@@ -93,6 +102,7 @@ export interface RawSnapshot {
   speciesMeta: RawSpeciesMeta;
   moves: Record<string, RawMove>;
   abilities: Record<string, RawAbility>;
+  machines: RawMachine[];
   /** Keyed by species slug. */
   speciesDetails: Record<string, RawSpeciesDetails>;
 }
