@@ -1,0 +1,48 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #1d2330;
+  --muted: #6b7385;
+  --border: #dde1e8;
+  --accent: #b8860b;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+h1, h2, h3 { margin: 0; }
+
+.app { max-width: 960px; margin: 0 auto; padding: 16px; }
+.app-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.app-header h1 { font-size: 1.4rem; }
+.data-version { font-size: 0.85rem; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; }
+.muted { color: var(--muted); font-weight: normal; }
+
+.team-editor h2 { font-size: 1.15rem; margin-bottom: 8px; }
+
+.species-search { position: relative; margin-bottom: 16px; }
+.species-search input { width: 100%; padding: 8px 10px; font-size: 1rem; border: 1px solid var(--border); border-radius: 6px; }
+.search-results { list-style: none; margin: 4px 0 0; padding: 0; position: absolute; z-index: 1; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; max-height: 360px; overflow-y: auto; }
+.search-results button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 10px; background: none; border: 0; cursor: pointer; font: inherit; text-align: left; }
+.search-results button:hover, .search-results button:focus { background: var(--bg); }
+
+.team-members { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.team-member-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.team-member-card header { display: flex; justify-content: space-between; align-items: center; }
+.team-member-card h3 { font-size: 1rem; }
+.team-member-card dl { margin: 0; font-size: 0.9rem; }
+.team-member-card dt { color: var(--muted); font-size: 0.8rem; }
+.team-member-card dd { margin: 0; }
+.innates { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.remove { font-size: 0.8rem; background: none; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+
+.type-badges { display: inline-flex; gap: 4px; }
+.type-badge { font-size: 0.75rem; padding: 1px 8px; border-radius: 4px; color: #fff; background: #777; text-shadow: 0 1px 1px rgb(0 0 0 / 0.3); }
+.type-normal { background: #9fa19f; } .type-fire { background: #e62829; } .type-water { background: #2980ef; }
+.type-electric { background: #d4a800; } .type-grass { background: #3fa129; } .type-ice { background: #3dcef3; }
+.type-fighting { background: #ff8000; } .type-poison { background: #9141cb; } .type-ground { background: #915121; }
+.type-flying { background: #81b9ef; } .type-psychic { background: #ef4179; } .type-bug { background: #91a119; }
+.type-rock { background: #afa981; } .type-ghost { background: #704170; } .type-dragon { background: #5060e1; }
+.type-dark { background: #624d4e; } .type-steel { background: #60a1b8; } .type-fairy { background: #ef70ef; }
