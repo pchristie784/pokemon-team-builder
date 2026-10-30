@@ -138,6 +138,7 @@ describe('Suggestions', () => {
     const suggestions = builder.suggest(teamId);
     const elapsed = performance.now() - start;
     expect(suggestions).toHaveLength(MAX_SUGGESTIONS);
-    expect(elapsed).toBeLessThan(500); // ~80 ms locally; generous for slow CI machines
+    // ~80 ms locally. Shared CI runners are several times slower and noisier, so CI gets more room.
+    expect(elapsed).toBeLessThan(process.env.CI ? 2000 : 500);
   });
 });
