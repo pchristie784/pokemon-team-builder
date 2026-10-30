@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MAX_TEAM_MEMBERS, type TeamId } from '../domain';
+import { Sprite } from './Sprite';
 import { TypeBadges } from './TypeBadges';
 import { useTeamBuilder } from './useTeamBuilder';
 
@@ -49,7 +50,8 @@ export function BoxMemberPicker({ teamId, disabled }: { teamId: TeamId; disabled
                     setQuery('');
                   }}
                 >
-                  <span>
+                  <span className="with-sprite">
+                    <Sprite sprite={c.species.sprite} name="" />
                     {c.species.displayName}{' '}
                     {c.plannedEvolution ? (
                       <span className="planned-marker" title="Planned Evolution">

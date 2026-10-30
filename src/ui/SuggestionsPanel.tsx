@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { isDomainError, typeName, type Suggestion, type TeamId } from '../domain';
+import { Sprite } from './Sprite';
 import { TypeBadges } from './TypeBadges';
 import { useTeamBuilder } from './useTeamBuilder';
 
@@ -37,6 +38,7 @@ export function SuggestionsPanel({ teamId }: { teamId: TeamId }) {
           {suggestions.map((s) => (
             <li key={`${s.species.id}:${s.action.kind === 'replace' ? s.action.memberId : 'fill'}`} className="suggestion">
               <div className="suggestion-main">
+                <Sprite sprite={s.species.sprite} name="" />
                 <strong>{s.species.displayName}</strong>
                 <TypeBadges types={s.species.types} />
                 {s.plannedEvolution && <span className="muted">Planned Evolution ({s.plannedEvolution.label})</span>}

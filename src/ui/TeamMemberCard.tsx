@@ -3,6 +3,7 @@ import { AbilityPicker } from './AbilityPicker';
 import { MegaToggle } from './MegaToggle';
 import { useTeamBuilder } from './useTeamBuilder';
 import { MovePicker } from './MovePicker';
+import { Sprite } from './Sprite';
 import { StatRoleBadges } from './StatRoles';
 import { TypeBadges } from './TypeBadges';
 
@@ -22,6 +23,7 @@ export function TeamMemberCard({ member, onRemove, onMoveUp, onMoveDown }: Props
     <article className="team-member-card">
       <header>
         <h3>
+          <Sprite sprite={member.mega?.sprite ?? member.species.sprite} name={member.mega?.displayName ?? member.species.displayName} size="large" />
           {member.species.displayName}
           {member.plannedEvolution && (
             <span className="planned-marker" title={`Planned Evolution: ${member.plannedEvolution.label}`}>
