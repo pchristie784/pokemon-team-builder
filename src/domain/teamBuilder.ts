@@ -30,6 +30,8 @@ import type { AbilityId } from './data/model';
 import { abilityOptions, setTeamMemberAbility, type AbilityOption } from './team';
 import { megaOptions, type MegaId, type MegaOption } from './data/megas';
 import { setTeamMemberMega } from './team';
+import { dataIssues, exportState, parseExport, previewImport, type DataIssues, type ImportPreview } from './exportImport';
+import { applySuggestion, suggest, type Suggestion } from './suggest';
 
 export interface TeamBuilderOptions {
   storage: StorageAdapter;
@@ -255,5 +257,40 @@ export class TeamBuilder {
   getTeamMemberLearnableMoves(teamId: TeamId, memberId: TeamMemberId): TeamMemberLearnableMove[] {
     const member = this.getTeam(teamId).members.find((m) => m.id === memberId);
     return member ? flagLevelUpMoves(learnableMoves(this.data, member.species.id), member.boxEntry) : [];
+  }
+
+  // --- Suggestions ---
+
+  /** Ranked Suggestions that fix the Team's Critique problems; fill a slot (under six) or replace a member (full). */
+  suggest(teamId: TeamId): Suggestion[] {
+    return suggest(this.state, this.data, teamId);
+  }
+
+  /** Adds or replaces in one action, keeping the replaced member's position. Mode rules apply as when adding. */
+  applySuggestion(teamId: TeamId, suggestion: Suggestion): void {
+    this.apply((s) => applySuggestion(s, this.data, teamId, suggestion));
+  }
+
+  // --- Export and import ---
+
+  /** All data (Box, Teams, mode, Difficulty, data version) as versioned JSON, for the player to download. */
+  exportData(): string {
+    return exportState(this.state, this.data);
+  }
+
+  /** What importing the JSON would bring in, and any Data Issues; never changes state. */
+  previewImport(json: string): ImportPreview {
+    return previewImport(json, this.data);
+  }
+
+  /** Replaces all current data with the export (after the player confirms). Throws DomainError 'INVALID_IMPORT'. */
+  importData(json: string): void {
+    const { state } = parseExport(json);
+    this.apply(() => state);
+  }
+
+  /** Unknown Species, moves, Abilities or Megas in the current data, and a data version mismatch. */
+  getDataIssues(): DataIssues {
+    return dataIssues(this.state, this.data);
   }
 }

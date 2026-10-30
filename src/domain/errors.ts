@@ -13,7 +13,8 @@ export type DomainErrorCode =
   | 'INVALID_LEVEL' // a Box Entry level that is not a whole number from 1 to 100
   | 'NOT_IN_BOX' // Box Mode: a Species that is not a Box Entry or one of its Planned Evolutions
   | 'INVALID_MEGA' // not a Mega of the Team Member's Species
-  | 'SECOND_MEGA'; // a second Mega toggled on in the same Team
+  | 'SECOND_MEGA' // a second Mega toggled on in the same Team
+  | 'INVALID_IMPORT'; // an import file that is not valid JSON or not an export of this app
 
 export class DomainError extends Error {
   constructor(

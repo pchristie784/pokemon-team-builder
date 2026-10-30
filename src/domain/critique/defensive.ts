@@ -49,16 +49,20 @@ export function memberDefensiveMultiplier(member: TeamMemberView, attackType: Po
   return defensiveMultiplier(member.types, member.effectiveAbilityIds, attackType);
 }
 
-export function defensiveCoverage(team: TeamView): DefensiveCoverage {
+/** `multiplier` lets Suggestions pass a memoised memberDefensiveMultiplier when evaluating many hypothetical Teams. */
+export function defensiveCoverage(
+  team: Pick<TeamView, 'members'>,
+  multiplier: (member: TeamMemberView, attackType: PokemonType) => number = memberDefensiveMultiplier,
+): DefensiveCoverage {
   const quadWeaknesses: QuadWeakness[] = [];
   const byType = POKEMON_TYPES.map((attackType): TypeDefense => {
     const entry: TypeDefense = { attackType, weak: [], resist: [], immune: [] };
     for (const member of team.members) {
-      const multiplier = memberDefensiveMultiplier(member, attackType);
-      if (multiplier === 0) entry.immune.push(member.id);
-      else if (multiplier < 1) entry.resist.push(member.id);
-      else if (multiplier > 1) entry.weak.push(member.id);
-      if (multiplier >= 4) quadWeaknesses.push({ kind: 'quadWeakness', memberId: member.id, type: attackType });
+      const taken = multiplier(member, attackType);
+      if (taken === 0) entry.immune.push(member.id);
+      else if (taken < 1) entry.resist.push(member.id);
+      else if (taken > 1) entry.weak.push(member.id);
+      if (taken >= 4) quadWeaknesses.push({ kind: 'quadWeakness', memberId: member.id, type: attackType });
     }
     return entry;
   });
