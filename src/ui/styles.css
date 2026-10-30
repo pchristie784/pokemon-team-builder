@@ -31,7 +31,7 @@ h1, h2, h3 { margin: 0; }
 .team-members { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .team-member-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .team-member-card header { display: flex; justify-content: space-between; align-items: center; }
-.team-member-card h3 { font-size: 1rem; }
+.team-member-card h3 { font-size: 1rem; display: flex; align-items: center; gap: 6px; }
 .team-member-card dl { margin: 0; font-size: 0.9rem; }
 .team-member-card dt { color: var(--muted); font-size: 0.8rem; }
 .team-member-card dd { margin: 0; }
@@ -135,3 +135,9 @@ h1, h2, h3 { margin: 0; }
 .suggestion-reason { margin: 2px 0 0; font-size: 0.85rem; color: var(--muted); }
 .suggestion-moves { margin: 4px 0 0; padding-left: 18px; font-size: 0.85rem; }
 .suggestion-error { color: #b42318; }
+
+/* Sprites (64x64 pixel art from the wiki) */
+.sprite { image-rendering: pixelated; flex-shrink: 0; }
+.sprite-small { width: 32px; height: 32px; margin: -4px 0; }
+.sprite-large { width: 64px; height: 64px; margin: -8px 0; }
+.with-sprite { display: inline-flex; align-items: center; gap: 6px; }

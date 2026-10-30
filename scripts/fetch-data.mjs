@@ -16,15 +16,24 @@ const TOP_LEVEL = [
   'encounters.json',
   'trainers.json',
 ];
+const SPRITES_OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'soulgold');
 const CONCURRENCY = 8;
 
-async function fetchText(url, attempt = 1) {
+async function fetchOk(url, attempt = 1) {
   const res = await fetch(url);
   if (!res.ok) {
-    if (attempt < 3 && res.status >= 500) return fetchText(url, attempt + 1);
+    if (attempt < 3 && res.status >= 500) return fetchOk(url, attempt + 1);
     throw new Error(`GET ${url} -> ${res.status}`);
   }
-  return res.text();
+  return res;
+}
+
+async function fetchText(url) {
+  return (await fetchOk(url)).text();
+}
+
+async function fetchBytes(url) {
+  return new Uint8Array(await (await fetchOk(url)).arrayBuffer());
 }
 
 async function fetchJson(url) {
@@ -70,11 +79,23 @@ async function main() {
     if (++done % 100 === 0) console.log(`  species-details ${done}/${slugs.length}`);
   });
 
+  // Sprites go to public/ (served and copied into the build as-is) so the app works offline.
+  const sprites = [...new Set(JSON.parse(texts['species.json']).map((s) => s.sprite).filter(Boolean))];
+  await rm(SPRITES_OUT, { recursive: true, force: true });
+  done = 0;
+  await pool(sprites, async (sprite) => {
+    const bytes = await fetchBytes(BASE + sprite);
+    const file = join(SPRITES_OUT, sprite);
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, bytes);
+    if (++done % 100 === 0) console.log(`  sprites ${done}/${sprites.length}`);
+  });
+
   await writeFile(
     join(OUT, 'version.json'),
     JSON.stringify({ hackVersion: version, fetchedAt: new Date().toISOString(), source: DATA }, null, 2) + '\n',
   );
-  console.log(`Done: ${slugs.length} species-details files.`);
+  console.log(`Done: ${slugs.length} species-details files, ${sprites.length} sprites.`);
 }
 
 main().catch((err) => {

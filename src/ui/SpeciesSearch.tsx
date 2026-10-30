@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { SpeciesId } from '../domain';
+import { Sprite } from './Sprite';
 import { TypeBadges } from './TypeBadges';
 import { useTeamBuilder } from './useTeamBuilder';
 
@@ -37,7 +38,10 @@ export function SpeciesSearch({ onPick, disabled = false, disabledReason }: Prop
                   setQuery('');
                 }}
               >
-                <span>{species.displayName}</span>
+                <span className="with-sprite">
+                  <Sprite sprite={species.sprite} name="" />
+                  {species.displayName}
+                </span>
                 <TypeBadges types={species.types} />
               </button>
             </li>

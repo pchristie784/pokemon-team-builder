@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { isDomainError, MAX_LEVEL, MIN_LEVEL, type BoxEntryView } from '../domain';
 import { SpeciesSearch } from './SpeciesSearch';
+import { Sprite } from './Sprite';
 import { TypeBadges } from './TypeBadges';
 import { useTeamBuilder } from './useTeamBuilder';
 
@@ -50,6 +51,7 @@ function BoxEntryRow({ entry }: { entry: BoxEntryView }) {
   return (
     <div className="box-entry">
       <div className="box-entry-main">
+        <Sprite sprite={entry.species.sprite} name="" />
         <strong>{entry.species.displayName}</strong>
         <TypeBadges types={entry.species.types} />
         <label className="box-entry-level">

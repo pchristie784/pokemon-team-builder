@@ -7,6 +7,7 @@ Vocabulary: `GLOSSARY.md`. Spec and tickets: `.scratch/team-builder-v1/`.
 
 ```
 data/soulgold/            vendored wiki JSON + version.json (refresh: npm run fetch-data; never hand-edit)
+public/soulgold/sprites/  vendored species sprites, also written by npm run fetch-data
 scripts/fetch-data.mjs    downloads the snapshot, scrapes the hack version from the wiki index
 src/domain/               THE seam. UI and tests import only from src/domain/index.ts
   index.ts                public API: createTeamBuilder + type/helper re-exports (one line each)
@@ -19,7 +20,8 @@ src/domain/               THE seam. UI and tests import only from src/domain/ind
   errors.ts               DomainError with a typed `code` union
   pokemonTypes.ts         the 18 types (TYPE_* constants) + typeName()
   data/                   raw.ts (JSON shapes), model.ts (Species, Move, Ability), names.ts (form display names),
-                          snapshot.ts (DataSnapshot lookups), load.ts (loadSnapshot(), cached)
+                          snapshot.ts (DataSnapshot lookups), load.ts (loadSnapshot(), cached),
+                          sprites.ts (spriteUrl: local sprite path under public/soulgold/)
 src/ui/                   thin React layer; one component per file; useTeamBuilder() hook re-renders on change
 ```
 
