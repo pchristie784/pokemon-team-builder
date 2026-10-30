@@ -63,7 +63,7 @@ export function viewTeamMember(member: TeamMember, data: DataSnapshot, box: BoxE
   if (!species) return undefined;
   const mega = member.mega ? (findMega(data, member.speciesId, member.mega) ?? null) : null;
   const stats = mega?.stats ?? species.stats;
-  const innates = mega?.innates ?? species.innates.map((id) => data.getAbility(id) ?? { id, name: id, description: '' });
+  const innates = mega?.innates ?? species.innates.map((id) => data.abilityOrPlaceholder(id));
   const activeAbilityId = mega ? mega.ability.id : member.abilityId;
   return {
     member,
@@ -73,7 +73,7 @@ export function viewTeamMember(member: TeamMember, data: DataSnapshot, box: BoxE
     stats,
     statRoles: statRolesOf(stats),
     innates,
-    ability: member.abilityId ? (data.getAbility(member.abilityId) ?? { id: member.abilityId, name: member.abilityId, description: '' }) : null,
+    ability: member.abilityId ? data.abilityOrPlaceholder(member.abilityId) : null,
     mega,
     effectiveAbilityIds: [...innates.map((a) => a.id), ...(activeAbilityId ? [activeAbilityId] : [])],
     moves: member.moves.flatMap((id) => data.getMove(id) ?? []),

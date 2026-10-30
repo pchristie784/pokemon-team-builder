@@ -1,4 +1,5 @@
 import {
+  problemLabel,
   typeName,
   type DefensiveCoverage as Coverage,
   type PokemonType,
@@ -19,12 +20,12 @@ export function DefensiveCoverage({ coverage, members }: { coverage: Coverage; m
       <ul className="critique-flags">
         {coverage.stackedWeaknesses.map((p) => (
           <li key={`s-${p.type}`} className="flag flag-bad">
-            <TypeBadges types={[p.type]} /> Stacked Weakness
+            {problemLabel(p)}
           </li>
         ))}
         {coverage.unansweredTypes.map((p) => (
           <li key={`u-${p.type}`} className="flag flag-warn">
-            <TypeBadges types={[p.type]} /> Unanswered Type
+            {problemLabel(p)}
           </li>
         ))}
         {coverage.quadWeaknesses.map((p) => (

@@ -9,10 +9,14 @@ import { TypeBadges } from './TypeBadges';
 interface Props {
   member: TeamMemberView;
   onRemove: () => void;
+  /** Undefined when it is already first. */
+  onMoveUp?: () => void;
+  /** Undefined when it is already last. */
+  onMoveDown?: () => void;
 }
 
 // Later tickets add pickers (Ability, moves, Mega) as their own components rendered here.
-export function TeamMemberCard({ member, onRemove }: Props) {
+export function TeamMemberCard({ member, onRemove, onMoveUp, onMoveDown }: Props) {
   const builder = useTeamBuilder();
   return (
     <article className="team-member-card">
@@ -25,9 +29,17 @@ export function TeamMemberCard({ member, onRemove }: Props) {
             </span>
           )}
         </h3>
-        <button type="button" className="remove" onClick={onRemove} aria-label={`Remove ${member.species.displayName}`}>
-          Remove
-        </button>
+        <span className="member-actions">
+          <button type="button" className="remove" onClick={onMoveUp} disabled={!onMoveUp} aria-label={`Move ${member.species.displayName} up`}>
+            ↑
+          </button>
+          <button type="button" className="remove" onClick={onMoveDown} disabled={!onMoveDown} aria-label={`Move ${member.species.displayName} down`}>
+            ↓
+          </button>
+          <button type="button" className="remove" onClick={onRemove} aria-label={`Remove ${member.species.displayName}`}>
+            Remove
+          </button>
+        </span>
       </header>
       <TypeBadges types={member.types} />
       <StatRoleBadges roles={member.statRoles} />

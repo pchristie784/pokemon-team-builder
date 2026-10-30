@@ -16,6 +16,7 @@ export { DIFFICULTIES, type AppState, type Difficulty } from './state';
 export { MAX_TEAM_MEMBERS, type Team, type TeamId, type TeamMember, type TeamMemberId } from './team';
 export type { TeamView, TeamMemberView } from './teamView';
 export type { Critique, CritiqueProblem } from './critique';
+export { problemLabel } from './critique/labels';
 export type { DefensiveCoverage, TypeDefense, StackedWeakness, UnansweredType, QuadWeakness } from './critique/defensive';
 export type { StatRole, StatRoles, MemberStatRoles, StatRoleProblem, AllPhysical, AllSpecial, NoFastMember } from './critique/statRoles';
 export type { LearnableMove, MoveSource } from './data/learnset';
@@ -25,5 +26,5 @@ export type { OffensiveCoverage, TypeOffense, CoverageSource, NoSuperEffectiveHi
 export type { MegaId, MegaOption } from './data/megas';
 export { MODES, MIN_LEVEL, MAX_LEVEL, type Mode, type BoxEntry, type BoxEntryId, type BoxEntryView, type BoxCandidate, type TeamMemberLearnableMove } from './box';
 export type { PlannedEvolution, EvolutionStep } from './data/evolutions';
-export { MAX_SUGGESTIONS, problemLabel, type Suggestion, type SuggestionAction, type ProposedMove } from './suggest';
+export { MAX_SUGGESTIONS, type Suggestion, type SuggestionAction, type ProposedMove } from './suggest';
 export { hasDataIssues, type DataIssues, type ImportPreview, type UnknownReference, type UnknownReferenceKind, type ReferenceLocation } from './exportImport';

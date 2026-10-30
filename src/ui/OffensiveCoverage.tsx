@@ -1,4 +1,5 @@
 import {
+  problemLabel,
   typeName,
   type CoverageSource,
   type OffensiveCoverage as Coverage,
@@ -34,14 +35,14 @@ export function OffensiveCoverage({ coverage, members }: { coverage: Coverage; m
           <ul className="critique-flags">
             {coverage.typesHitOnlyAtReducedDamage.map((p) => (
               <li key={`r-${p.type}`} className="flag flag-bad">
-                <TypeBadges types={[p.type]} /> only hit at reduced damage
+                {problemLabel(p)}
               </li>
             ))}
             {coverage.typesWithoutSuperEffectiveHit
               .filter((p) => !reduced.has(p.type))
               .map((p) => (
                 <li key={`n-${p.type}`} className="flag flag-warn">
-                  <TypeBadges types={[p.type]} /> no super-effective hit
+                  {problemLabel(p)}
                 </li>
               ))}
             {noSuper.size === 0 && <li className="muted">Every type is hit super-effectively.</li>}

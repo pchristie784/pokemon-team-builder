@@ -88,6 +88,36 @@ describe('Team (Dex Mode)', () => {
     expect(builder.getTeam(teamId).members.map((m) => m.species.id)).toEqual(['SPECIES_VULPIX_ALOLA']);
   });
 
+  it('reorders Team Members, keeping each one intact', () => {
+    const builder = newBuilder();
+    const teamId = builder.getActiveTeamId();
+    for (const id of ['SPECIES_PIDGEY', 'SPECIES_MARILL', 'SPECIES_ONIX']) builder.addTeamMember(teamId, id);
+    const onix = builder.getTeam(teamId).members[2]!;
+    const order = () => builder.getTeam(teamId).members.map((m) => m.species.displayName);
+
+    builder.moveTeamMember(teamId, onix.id, 0);
+    expect(order()).toEqual(['Onix', 'Pidgey', 'Marill']);
+    expect(builder.getTeam(teamId).members[0]!.id).toBe(onix.id);
+    builder.moveTeamMember(teamId, onix.id, 1);
+    expect(order()).toEqual(['Pidgey', 'Onix', 'Marill']);
+  });
+
+  it('rejects moving a Team Member outside the Team, or an unknown Team Member', () => {
+    const builder = newBuilder();
+    const teamId = builder.getActiveTeamId();
+    builder.addTeamMember(teamId, 'SPECIES_PIDGEY');
+    builder.addTeamMember(teamId, 'SPECIES_MARILL');
+    const pidgey = builder.getTeam(teamId).members[0]!;
+    for (const index of [-1, 2, 0.5]) {
+      expect(() => builder.moveTeamMember(teamId, pidgey.id, index)).toThrow(
+        expect.objectContaining({ code: 'INVALID_POSITION' }),
+      );
+    }
+    expect(() => builder.moveTeamMember(teamId, 'nobody', 0)).toThrow(
+      expect.objectContaining({ code: 'UNKNOWN_TEAM_MEMBER' }),
+    );
+  });
+
   it('rejects a Mega or unknown constant as a Team Member', () => {
     const builder = newBuilder();
     const teamId = builder.getActiveTeamId();

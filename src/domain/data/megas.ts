@@ -7,7 +7,7 @@
 // A Mega brings its own typing, base stats, Innates and one ability (Megas list a single ability; the first
 // regular ability is used). While toggled on, these replace the base Species' typing, stats, Innates and
 // the chosen Ability for the Critique.
-import type { Ability, AbilityId, BaseStats, SpeciesId } from './model';
+import type { Ability, BaseStats, SpeciesId } from './model';
 import type { PokemonType } from '../pokemonTypes';
 import type { DataSnapshot } from './snapshot';
 
@@ -41,8 +41,8 @@ export function megaOptions(data: DataSnapshot, speciesId: SpeciesId): MegaOptio
         itemName,
         types: form.types,
         stats: form.stats,
-        ability: resolveAbility(data, abilityId),
-        innates: form.innates.map((id) => resolveAbility(data, id)),
+        ability: data.abilityOrPlaceholder(abilityId),
+        innates: form.innates.map((id) => data.abilityOrPlaceholder(id)),
         sprite: form.sprite,
       };
     });
@@ -50,8 +50,4 @@ export function megaOptions(data: DataSnapshot, speciesId: SpeciesId): MegaOptio
 
 export function findMega(data: DataSnapshot, speciesId: SpeciesId, megaId: MegaId): MegaOption | undefined {
   return megaOptions(data, speciesId).find((m) => m.id === megaId);
-}
-
-function resolveAbility(data: DataSnapshot, id: AbilityId): Ability {
-  return data.getAbility(id) ?? { id, name: id, description: '' };
 }

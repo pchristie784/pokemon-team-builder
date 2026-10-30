@@ -101,6 +101,13 @@ describe('Choosing an Ability', () => {
     expect(typeDefense(builder, teamId, 'TYPE_GRASS').immune).toEqual(memberIds);
   });
 
+  it('rejects listing the Abilities of an unknown Team Member', () => {
+    const { builder, teamId } = teamOf('SPECIES_MARILL');
+    expect(() => builder.getAbilityOptions(teamId, 'nobody')).toThrow(
+      expect.objectContaining({ code: 'UNKNOWN_TEAM_MEMBER' }),
+    );
+  });
+
   it("rejects an Ability that is not one of the Species' regular or hidden abilities", () => {
     const { builder, teamId, memberIds } = teamOf('SPECIES_MARILL');
     expect(() => builder.setTeamMemberAbility(teamId, memberIds[0]!, 'ABILITY_LEVITATE')).toThrowError(

@@ -6,6 +6,7 @@ import { findMega, type MegaId } from './data/megas';
 import { DomainError } from './errors';
 import { newId } from './ids';
 import type { AppState } from './state';
+import type { BoxEntryId } from './box';
 
 export type TeamId = string;
 export type TeamMemberId = string;
@@ -22,7 +23,7 @@ export interface TeamMember {
   /** The toggled-on Mega, or null when Mega is off. At most one per Team. */
   mega: MegaId | null;
   /** The Box Entry it was chosen from (Box Mode, ticket 09); null or absent when not linked to one. */
-  boxEntryId?: string | null;
+  boxEntryId?: BoxEntryId | null;
 }
 
 export interface Team {
@@ -41,6 +42,12 @@ export function findTeam(state: AppState, teamId: TeamId): Team {
   return team;
 }
 
+export function findTeamMember(state: AppState, teamId: TeamId, memberId: TeamMemberId): TeamMember {
+  const member = findTeam(state, teamId).members.find((m) => m.id === memberId);
+  if (!member) throw new DomainError('UNKNOWN_TEAM_MEMBER', `No Team Member with id ${memberId}`);
+  return member;
+}
+
 /** Replace one Team immutably. */
 export function updateTeam(state: AppState, teamId: TeamId, change: (team: Team) => Team): AppState {
   const team = findTeam(state, teamId);
@@ -54,11 +61,8 @@ export function updateTeamMember(
   memberId: TeamMemberId,
   change: (member: TeamMember) => TeamMember,
 ): AppState {
-  return updateTeam(state, teamId, (team) => {
-    const member = team.members.find((m) => m.id === memberId);
-    if (!member) throw new DomainError('UNKNOWN_TEAM_MEMBER', `No Team Member with id ${memberId}`);
-    return { ...team, members: team.members.map((m) => (m === member ? change(m) : m)) };
-  });
+  const member = findTeamMember(state, teamId, memberId);
+  return updateTeam(state, teamId, (team) => ({ ...team, members: team.members.map((m) => (m === member ? change(m) : m)) }));
 }
 
 export function addTeamMember(
@@ -80,11 +84,22 @@ export function addTeamMember(
 }
 
 export function removeTeamMember(state: AppState, teamId: TeamId, memberId: TeamMemberId): AppState {
+  findTeamMember(state, teamId, memberId);
+  return updateTeam(state, teamId, (team) => ({ ...team, members: team.members.filter((m) => m.id !== memberId) }));
+}
+
+/** Move a Team Member to position `toIndex` (0-based) on its Team. Throws 'INVALID_POSITION' outside the Team. */
+export function moveTeamMember(state: AppState, teamId: TeamId, memberId: TeamMemberId, toIndex: number): AppState {
+  const member = findTeamMember(state, teamId, memberId);
+  const { members } = findTeam(state, teamId);
+  if (!Number.isInteger(toIndex) || toIndex < 0 || toIndex >= members.length) {
+    throw new DomainError('INVALID_POSITION', `A Team Member's position is from 0 to ${members.length - 1}`);
+  }
+  if (members.indexOf(member) === toIndex) return state;
   return updateTeam(state, teamId, (team) => {
-    if (!team.members.some((m) => m.id === memberId)) {
-      throw new DomainError('UNKNOWN_TEAM_MEMBER', `No Team Member with id ${memberId}`);
-    }
-    return { ...team, members: team.members.filter((m) => m.id !== memberId) };
+    const reordered = team.members.filter((m) => m !== member);
+    reordered.splice(toIndex, 0, member);
+    return { ...team, members: reordered };
   });
 }
 
@@ -121,8 +136,7 @@ export function addTeamMemberMove(
   memberId: TeamMemberId,
   moveId: MoveId,
 ): AppState {
-  const member = findTeam(state, teamId).members.find((m) => m.id === memberId);
-  if (!member) throw new DomainError('UNKNOWN_TEAM_MEMBER', `No Team Member with id ${memberId}`);
+  const member = findTeamMember(state, teamId, memberId);
   if (member.moves.includes(moveId)) {
     throw new DomainError('DUPLICATE_MOVE', 'A Team Member cannot know the same move twice');
   }
@@ -156,7 +170,7 @@ export function abilityOptions(species: Species, data: DataSnapshot): AbilityOpt
   const add = (id: AbilityId, hidden: boolean) => {
     if (seen.has(id)) return;
     seen.add(id);
-    options.push({ ability: data.getAbility(id) ?? { id, name: id, description: '' }, hidden });
+    options.push({ ability: data.abilityOrPlaceholder(id), hidden });
   };
   for (const id of species.regularAbilities) add(id, false);
   for (const id of species.hiddenAbilities) add(id, true);

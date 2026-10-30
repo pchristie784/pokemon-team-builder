@@ -6,30 +6,33 @@
 // Mutations go through `apply`; queries read `this.state` and `this.data`.
 import { critique, type Critique } from './critique';
 import { plannedEvolutions, type PlannedEvolution } from './data/evolutions';
-import { addBoxEntry, addTeamMemberInMode, boxCandidates, flagLevelUpMoves, type TeamMemberLearnableMove, setMode, type BoxCandidate, type Mode, removeBoxEntry, setBoxEntryLevel, setBoxEntrySpecies, viewBox, type BoxEntryId, type BoxEntryView } from './box';
+import { addBoxEntry, addTeamMemberInMode, boxCandidates, boxLinkOf, flagLevelUpMoves, type TeamMemberLearnableMove, setMode, type BoxCandidate, type Mode, removeBoxEntry, setBoxEntryLevel, setBoxEntrySpecies, viewBox, type BoxEntryId, type BoxEntryView } from './box';
 import { learnableMoves, type LearnableMove } from './data/learnset';
 import { loadSnapshot } from './data/load';
-import type { DataVersion, MoveId, Species, SpeciesId } from './data/model';
+import type { AbilityId, DataVersion, MoveId, Species, SpeciesId } from './data/model';
 import type { DataSnapshot } from './data/snapshot';
 import { loadState, saveState, stampDataVersion } from './persistence';
 import { setDifficulty, type AppState, type Difficulty } from './state';
 import type { StorageAdapter } from './storage';
 import {
+  abilityOptions,
   addTeamMemberMove,
-  removeTeamMemberMove,
-  setTeamMemberMoves,
   findTeam,
+  findTeamMember,
+  moveTeamMember,
   removeTeamMember,
+  removeTeamMemberMove,
+  setTeamMemberAbility,
+  setTeamMemberMega,
+  setTeamMemberMoves,
+  type AbilityOption,
   type Team,
   type TeamId,
   type TeamMemberId,
 } from './team';
 import { createTeam, deleteTeam, duplicateTeam, renameTeam, selectTeam } from './teamList';
 import { viewTeam, type TeamView } from './teamView';
-import type { AbilityId } from './data/model';
-import { abilityOptions, setTeamMemberAbility, type AbilityOption } from './team';
 import { megaOptions, type MegaId, type MegaOption } from './data/megas';
-import { setTeamMemberMega } from './team';
 import { dataIssues, exportState, parseExport, previewImport, type DataIssues, type ImportPreview } from './exportImport';
 import { applySuggestion, suggest, type Suggestion } from './suggest';
 
@@ -102,7 +105,8 @@ export class TeamBuilder {
 
   /**
    * Throws DomainError 'TEAM_FULL' for a seventh Team Member. In Box Mode the Species must be a Box Entry or
-   * one of its Planned Evolutions ('NOT_IN_BOX'); `boxEntryId` picks the Box Entry (else the first that fits).
+   * one of its Planned Evolutions ('NOT_IN_BOX'); `boxEntryId` picks the Box Entry (else the first unused one that fits).
+   * A Box Entry backs at most one Team Member per Team ('BOX_ENTRY_IN_USE').
    */
   addTeamMember(teamId: TeamId, speciesId: SpeciesId, boxEntryId?: BoxEntryId): void {
     this.apply((s) => addTeamMemberInMode(s, this.data, teamId, speciesId, boxEntryId));
@@ -110,6 +114,18 @@ export class TeamBuilder {
 
   removeTeamMember(teamId: TeamId, memberId: TeamMemberId): void {
     this.apply((s) => removeTeamMember(s, teamId, memberId));
+  }
+
+  /** Moves a Team Member to `toIndex` (0-based). Throws DomainError 'INVALID_POSITION' outside the Team. */
+  moveTeamMember(teamId: TeamId, memberId: TeamMemberId, toIndex: number): void {
+    this.apply((s) => moveTeamMember(s, teamId, memberId, toIndex));
+  }
+
+  // --- Critique ---
+
+  /** The Critique of a Team; derived on every call, never stored. */
+  getCritique(teamId: TeamId): Critique {
+    return critique(this.getTeam(teamId));
   }
 
   // --- Saved Teams and settings ---
@@ -123,13 +139,6 @@ export class TeamBuilder {
   /** Throws DomainError 'INVALID_TEAM_NAME' for a blank name. */
   renameTeam(teamId: TeamId, name: string): void {
     this.apply((s) => renameTeam(s, teamId, name));
-  }
-
-  // --- Defensive Coverage (Critique) ---
-
-  /** The Critique of a Team; derived on every call, never stored. */
-  getCritique(teamId: TeamId): Critique {
-    return critique(this.getTeam(teamId));
   }
 
   /** Copies a Team with new Team Member ids, makes the copy active and returns its id. */
@@ -184,10 +193,10 @@ export class TeamBuilder {
 
   // --- Innates and Abilities ---
 
-  /** The Team Member's choosable Abilities: its Species' regular then hidden abilities, each once. */
+  /** The Team Member's choosable Abilities: its Species' regular then hidden abilities, each once. Throws 'UNKNOWN_TEAM_MEMBER'. */
   getAbilityOptions(teamId: TeamId, memberId: TeamMemberId): AbilityOption[] {
-    const member = this.getTeam(teamId).members.find((m) => m.id === memberId);
-    return member ? abilityOptions(member.species, this.data) : [];
+    const species = this.data.getSpecies(findTeamMember(this.state, teamId, memberId).speciesId);
+    return species ? abilityOptions(species, this.data) : []; // a Species missing from the snapshot: a Data Issue
   }
 
   /** null clears the Ability. Throws DomainError 'INVALID_ABILITY' if not a regular or hidden ability. */
@@ -255,13 +264,14 @@ export class TeamBuilder {
 
   /** A Team Member's learnable moves, each flagged if learned by level-up only above its Box Entry's level. */
   getTeamMemberLearnableMoves(teamId: TeamId, memberId: TeamMemberId): TeamMemberLearnableMove[] {
-    const member = this.getTeam(teamId).members.find((m) => m.id === memberId);
-    return member ? flagLevelUpMoves(learnableMoves(this.data, member.species.id), member.boxEntry) : [];
+    const member = findTeamMember(this.state, teamId, memberId);
+    const { boxEntry } = boxLinkOf(member, this.state.box, this.data);
+    return flagLevelUpMoves(learnableMoves(this.data, member.speciesId), boxEntry);
   }
 
   // --- Suggestions ---
 
-  /** Ranked Suggestions that fix the Team's Critique problems; fill a slot (under six) or replace a member (full). */
+  /** Ranked Suggestions that fix the Team's Critique problems; add a new Team Member (under six) or replace one (full). */
   suggest(teamId: TeamId): Suggestion[] {
     return suggest(this.state, this.data, teamId);
   }

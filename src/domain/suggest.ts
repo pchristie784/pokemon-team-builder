@@ -1,6 +1,6 @@
 // Suggestions (GLOSSARY.md): candidate Species that fix the Team's Critique problems, ranked.
 //
-// How a Suggestion is found: for each candidate Species and each action (fill an empty slot, or replace a
+// How a Suggestion is found: for each candidate Species and each action (add as a new Team Member, or replace a
 // Team Member), build the hypothetical Team as a TeamView and diff its Critique problems against the Team's.
 //
 // Decisions (ticket 11):
@@ -35,9 +35,10 @@
 // - A proposed move's `fixes` are the offensive problems it covers in the hypothetical Team; for a fill they are
 //   the Team's own gaps, for a replace they may include gaps the replaced member's moves used to cover.
 import { POKEMON_TYPES, typeName, type PokemonType } from './pokemonTypes';
-import { boxCandidates, addTeamMemberInMode, flagLevelUpMoves, type BoxEntryId } from './box';
+import { boxCandidates, addTeamMemberInMode, flagLevelUpMoves, usedBoxEntryIds, type BoxEntryId } from './box';
 import type { CritiqueProblem } from './critique';
-import { defensiveCoverage, memberDefensiveMultiplier } from './critique/defensive';
+import { problemLabel } from './critique/labels';
+import { defensiveCoverage, isWeakness, memberDefensiveMultiplier } from './critique/defensive';
 import { countsForCoverage, effectiveMoveType, moveEffectiveness, SUPER_EFFECTIVE } from './critique/offensive';
 import { statRoles } from './critique/statRoles';
 import type { PlannedEvolution } from './data/evolutions';
@@ -45,7 +46,7 @@ import { learnableMoves } from './data/learnset';
 import type { Move, Species } from './data/model';
 import type { DataSnapshot } from './data/snapshot';
 import type { AppState } from './state';
-import { findTeam, removeTeamMember, setTeamMemberMoves, updateTeam, MAX_MOVES, MAX_TEAM_MEMBERS, type TeamId, type TeamMemberId } from './team';
+import { findTeam, moveTeamMember, removeTeamMember, setTeamMemberMoves, MAX_MOVES, MAX_TEAM_MEMBERS, type TeamId, type TeamMemberId } from './team';
 import { viewTeam, viewTeamMember, type TeamMemberView, type TeamView } from './teamView';
 
 /**
@@ -218,7 +219,7 @@ export interface Suggestion {
   /** Moves to teach it for its offensive fixes, at most MAX_MOVES; empty while offensive problems don't count. */
   proposedMoves: ProposedMove[];
   /**
-   * E.g. "fixes: Ground Stacked Weakness, no super effective hit on Dragon; adds: Ice Stacked Weakness;
+   * E.g. "fixes: Ground Stacked Weakness, no super-effective hit on Dragon; adds: Ice Stacked Weakness;
    * Ice Beam fixes Dragon gap".
    */
   reason: string;
@@ -231,25 +232,6 @@ interface Candidate {
 }
 
 const CANDIDATE_MEMBER_ID = 'suggestion-candidate';
-
-export function problemLabel(problem: CritiqueProblem): string {
-  switch (problem.kind) {
-    case 'stackedWeakness':
-      return `${typeName(problem.type)} Stacked Weakness`;
-    case 'unansweredType':
-      return `${typeName(problem.type)} Unanswered Type`;
-    case 'noSuperEffectiveHit':
-      return `no super effective hit on ${typeName(problem.type)}`;
-    case 'reducedDamageOnly':
-      return `only reduced damage on ${typeName(problem.type)}`;
-    case 'allPhysical':
-      return 'all physical attackers';
-    case 'allSpecial':
-      return 'all special attackers';
-    case 'noFastMember':
-      return 'no Fast member';
-  }
-}
 
 const problemKey = (p: CritiqueProblem): string => ('type' in p ? `${p.kind}:${p.type}` : p.kind);
 
@@ -320,7 +302,7 @@ export function suggest(state: AppState, data: DataSnapshot, teamId: TeamId): Su
   for (const { action, others, index } of actions) {
     const othersHits = offensive ? teamHits(others) : null;
     const taken = new Set(others.map((m) => m.species.id));
-    const usedEntries = new Set(others.flatMap((m) => (m.boxEntry ? [m.boxEntry.id] : [])));
+    const usedEntries = usedBoxEntryIds(others.map((m) => m.member));
     const seen = new Set<string>();
     for (const candidate of pool) {
       const { species } = candidate;
@@ -337,7 +319,7 @@ export function suggest(state: AppState, data: DataSnapshot, teamId: TeamId): Su
       const fixes = [...before].filter(([k]) => !after.has(k)).map(([, p]) => p);
       if (fixes.length === 0) continue;
       const introduces = [...after].filter(([k]) => !before.has(k)).map(([, p]) => p);
-      const newWeaknesses = POKEMON_TYPES.filter((t) => memoisedMultiplier(view, t) > 1);
+      const newWeaknesses = POKEMON_TYPES.filter((t) => isWeakness(memoisedMultiplier(view, t)));
       const reason =
         `fixes: ${fixes.map(problemLabel).join(', ')}` +
         (introduces.length ? `; adds: ${introduces.map(problemLabel).join(', ')}` : '') +
@@ -366,7 +348,7 @@ export function suggest(state: AppState, data: DataSnapshot, teamId: TeamId): Su
 }
 
 /**
- * Applies a Suggestion in one action: fills an empty slot, or replaces the named Team Member in its position,
+ * Applies a Suggestion in one action: adds it as a new Team Member, or replaces the named Team Member in its position,
  * with the proposed moves pre-filled. Mode rules apply as for adding a Team Member; the Suggestion's Box Entry is kept.
  */
 export function applySuggestion(state: AppState, data: DataSnapshot, teamId: TeamId, suggestion: Suggestion): AppState {
@@ -384,10 +366,6 @@ function placeSuggestion(state: AppState, data: DataSnapshot, teamId: TeamId, su
   const { memberId } = suggestion.action;
   const index = findTeam(state, teamId).members.findIndex((m) => m.id === memberId);
   const added = addTeamMemberInMode(removeTeamMember(state, teamId, memberId), data, teamId, suggestion.species.id, boxEntryId);
-  return updateTeam(added, teamId, (team) => {
-    const members = [...team.members];
-    const [newMember] = members.splice(members.length - 1, 1);
-    members.splice(index, 0, newMember!);
-    return { ...team, members };
-  });
+  const newMember = findTeam(added, teamId).members.at(-1)!;
+  return moveTeamMember(added, teamId, newMember.id, index);
 }

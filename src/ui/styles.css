@@ -37,6 +37,8 @@ h1, h2, h3 { margin: 0; }
 .team-member-card dd { margin: 0; }
 .innates { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .ability-picker { width: 100%; max-width: 100%; font: inherit; margin-bottom: 4px; }
+.member-actions { display: inline-flex; gap: 4px; }
+.remove:disabled { opacity: 0.4; cursor: default; }
 .remove { font-size: 0.8rem; background: none; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
 
 .type-badges { display: inline-flex; gap: 4px; }

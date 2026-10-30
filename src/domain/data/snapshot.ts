@@ -90,6 +90,11 @@ export class DataSnapshot {
     return a && { id, name: a.name, description: a.description };
   }
 
+  /** The Ability, or a placeholder named by its id when it is missing from the snapshot (a Data Issue). */
+  abilityOrPlaceholder(id: AbilityId): Ability {
+    return this.getAbility(id) ?? { id, name: id, description: '' };
+  }
+
   getMove(id: MoveId): Move | undefined {
     const m = this.raw.moves[id];
     if (!m) return undefined;

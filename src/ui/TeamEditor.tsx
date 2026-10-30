@@ -25,9 +25,16 @@ export function TeamEditor({ teamId }: { teamId: TeamId }) {
         />
       )}
       <ol className="team-members">
-        {team.members.map((member) => (
+        {team.members.map((member, index) => (
           <li key={member.id}>
-            <TeamMemberCard member={member} onRemove={() => builder.removeTeamMember(teamId, member.id)} />
+            <TeamMemberCard
+              member={member}
+              onRemove={() => builder.removeTeamMember(teamId, member.id)}
+              onMoveUp={index > 0 ? () => builder.moveTeamMember(teamId, member.id, index - 1) : undefined}
+              onMoveDown={
+                index < team.members.length - 1 ? () => builder.moveTeamMember(teamId, member.id, index + 1) : undefined
+              }
+            />
           </li>
         ))}
       </ol>

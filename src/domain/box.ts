@@ -7,8 +7,9 @@
 // - Switching mode never changes Teams; Box Mode restrictions apply only when adding a Team Member.
 // - A Team Member added in Box Mode records its Box Entry (`boxEntryId`); in Dex Mode it is null unless a
 //   Box Entry is passed explicitly. It is a Planned Evolution when its Species differs from its Box Entry's.
-//   Without an explicit Box Entry, Box Mode links the first Box Entry of that Species, else the first
-//   Box Entry it is a Planned Evolution of.
+//   Without an explicit Box Entry, Box Mode links the first unused Box Entry of that Species, else the first
+//   unused Box Entry it is a Planned Evolution of.
+// - One Box Entry backs at most one Team Member per Team ('BOX_ENTRY_IN_USE'); it may back members of other Teams.
 // - Removing a Box Entry keeps its Team Members but unlinks them (boxEntryId null): no Team is silently
 //   changed beyond losing the link. Changing a Box Entry's Species unlinks members whose Species is no
 //   longer that Species or one of its Planned Evolutions.
@@ -149,7 +150,8 @@ function linkTo(
 
 /**
  * Adds a Team Member, enforcing Box Mode: the Species must be a Box Entry's or one of its Planned
- * Evolutions. `boxEntryId` picks the Box Entry; otherwise the first that fits. In Dex Mode any Species
+ * Evolutions. `boxEntryId` picks the Box Entry; otherwise the first unused one that fits. A Box Entry already
+ * backing a member of this Team is rejected ('BOX_ENTRY_IN_USE'). In Dex Mode any Species
  * may be added, linked to a Box Entry only when `boxEntryId` is given.
  */
 export function addTeamMemberInMode(
@@ -159,16 +161,24 @@ export function addTeamMemberInMode(
   speciesId: SpeciesId,
   boxEntryId?: BoxEntryId,
 ): AppState {
+  const used = usedBoxEntryIds(findTeam(state, teamId).members);
   let entry: BoxEntry | undefined;
   if (boxEntryId !== undefined) {
     entry = findBoxEntry(state, boxEntryId);
     if (data.getSpecies(speciesId) && !linkTo(entry, speciesId, data)) {
       throw new DomainError('NOT_IN_BOX', `${speciesId} is not this Box Entry's Species or a Planned Evolution of it`);
     }
+    if (used.has(entry.id)) {
+      throw new DomainError('BOX_ENTRY_IN_USE', 'This Box Entry already backs another Team Member of this Team');
+    }
   } else if (state.mode === 'BOX') {
-    entry =
-      state.box.find((e) => e.speciesId === speciesId) ?? state.box.find((e) => linkTo(e, speciesId, data));
+    const fits = (e: BoxEntry) => e.speciesId === speciesId || linkTo(e, speciesId, data) !== undefined;
+    const unused = state.box.filter((e) => !used.has(e.id));
+    entry = unused.find((e) => e.speciesId === speciesId) ?? unused.find(fits);
     if (!entry && data.getSpecies(speciesId)) {
+      if (state.box.some(fits)) {
+        throw new DomainError('BOX_ENTRY_IN_USE', `Every Box Entry ${speciesId} could come from already backs a Team Member of this Team`);
+      }
       throw new DomainError('NOT_IN_BOX', `In Box Mode, ${speciesId} must be a Box Entry or one of its Planned Evolutions`);
     }
   }
@@ -177,6 +187,11 @@ export function addTeamMemberInMode(
   const members = findTeam(added, teamId).members;
   const linkedId = entry.id;
   return updateTeamMember(added, teamId, members[members.length - 1]!.id, (m) => ({ ...m, boxEntryId: linkedId }));
+}
+
+/** The Box Entries backing these Team Members; each backs at most one Team Member per Team. */
+export function usedBoxEntryIds(members: TeamMember[]): Set<BoxEntryId> {
+  return new Set(members.flatMap((m) => (m.boxEntryId ? [m.boxEntryId] : [])));
 }
 
 /** A Team Member's Box Entry, and whether it is a Planned Evolution of it. */
@@ -194,8 +209,9 @@ export function boxLinkOf(
 
 export interface TeamMemberLearnableMove extends LearnableMove {
   /**
-   * True when the move is learned by level-up only above its Box Entry's current level (none of its
-   * level-up sources is at or below it). Never set without a linked Box Entry with a level.
+   * True when no source is available now: the move is learned by level-up only (no TM/HM, tutor or egg
+   * source), and every level-up source is above its Box Entry's current level. Never set without a linked
+   * Box Entry with a level.
    */
   aboveBoxEntryLevel: boolean;
 }
@@ -203,8 +219,8 @@ export interface TeamMemberLearnableMove extends LearnableMove {
 export function flagLevelUpMoves(moves: LearnableMove[], boxEntry: BoxEntry | null): TeamMemberLearnableMove[] {
   const level = boxEntry?.level ?? null;
   return moves.map((m) => {
-    const levels = m.sources.flatMap((s) => (s.kind === 'levelUp' ? [s.level] : []));
-    const above = level !== null && levels.length > 0 && levels.every((l) => l > level);
+    // Above only when no source is available now: every source is level-up, all above the level.
+    const above = level !== null && m.sources.length > 0 && m.sources.every((s) => s.kind === 'levelUp' && s.level > level);
     return { ...m, aboveBoxEntryLevel: above };
   });
 }

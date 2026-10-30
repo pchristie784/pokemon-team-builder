@@ -5,6 +5,14 @@ import type { TeamMemberId } from '../team';
 import type { TeamMemberView, TeamView } from '../teamView';
 import { defensiveMultiplier } from '../abilityEffects';
 
+/**
+ * A Team Member is weak to a type it takes this multiplier or more from. Between 1 and 2 (e.g. Dry Skin's 1.25x
+ * Fire on a neutral typing) is neither a weakness nor a resistance.
+ */
+export const WEAKNESS_MULTIPLIER = 2;
+
+export const isWeakness = (multiplier: number): boolean => multiplier >= WEAKNESS_MULTIPLIER;
+
 /** Three or more Team Members are weak to `type`. */
 export const STACKED_WEAKNESS_MIN_MEMBERS = 3;
 
@@ -29,7 +37,7 @@ export interface QuadWeakness {
 /** One attacking type's effect on the Team; each member appears in at most one list. */
 export interface TypeDefense {
   attackType: PokemonType;
-  /** Members taking 2× or more (a 4× weakness counts here once). */
+  /** Members taking WEAKNESS_MULTIPLIER (2×) or more (a 4× weakness counts here once). */
   weak: TeamMemberId[];
   /** Members taking more than 0× but less than 1×. */
   resist: TeamMemberId[];
@@ -61,7 +69,7 @@ export function defensiveCoverage(
       const taken = multiplier(member, attackType);
       if (taken === 0) entry.immune.push(member.id);
       else if (taken < 1) entry.resist.push(member.id);
-      else if (taken > 1) entry.weak.push(member.id);
+      else if (isWeakness(taken)) entry.weak.push(member.id);
       if (taken >= 4) quadWeaknesses.push({ kind: 'quadWeakness', memberId: member.id, type: attackType });
     }
     return entry;

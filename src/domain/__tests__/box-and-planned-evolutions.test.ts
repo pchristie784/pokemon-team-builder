@@ -140,6 +140,7 @@ describe('Box Mode and Dex Mode', () => {
     const builder = newBuilder();
     const teamId = builder.getActiveTeamId();
     const entryId = builder.addBoxEntry('SPECIES_CYNDAQUIL', 10);
+    const secondId = builder.addBoxEntry('SPECIES_CYNDAQUIL', 10);
     builder.setMode('BOX');
     builder.addTeamMember(teamId, 'SPECIES_CYNDAQUIL');
     builder.addTeamMember(teamId, 'SPECIES_TYPHLOSION');
@@ -147,7 +148,7 @@ describe('Box Mode and Dex Mode', () => {
     const [cyndaquil, typhlosion] = builder.getTeam(teamId).members;
     expect(cyndaquil!.boxEntry?.id).toBe(entryId);
     expect(cyndaquil!.plannedEvolution).toBeNull();
-    expect(typhlosion!.boxEntry?.id).toBe(entryId);
+    expect(typhlosion!.boxEntry?.id).toBe(secondId);
     expect(typhlosion!.plannedEvolution?.label).toBe('via Quilava (Lv 14), then Lv 36');
   });
 
@@ -162,6 +163,29 @@ describe('Box Mode and Dex Mode', () => {
     expect(() => builder.addTeamMember(teamId, 'SPECIES_TYPHLOSION', second)).toThrow(
       expect.objectContaining({ code: 'NOT_IN_BOX' }),
     );
+  });
+
+  it('one Box Entry backs at most one Team Member per Team; a second Box Entry of the Species can back another', () => {
+    const builder = newBuilder();
+    const teamId = builder.getActiveTeamId();
+    const first = builder.addBoxEntry('SPECIES_CYNDAQUIL', 10);
+    builder.setMode('BOX');
+    builder.addTeamMember(teamId, 'SPECIES_CYNDAQUIL');
+    expect(() => builder.addTeamMember(teamId, 'SPECIES_CYNDAQUIL')).toThrow(
+      expect.objectContaining({ code: 'BOX_ENTRY_IN_USE' }),
+    );
+    expect(() => builder.addTeamMember(teamId, 'SPECIES_TYPHLOSION', first)).toThrow(
+      expect.objectContaining({ code: 'BOX_ENTRY_IN_USE' }),
+    );
+
+    const second = builder.addBoxEntry('SPECIES_CYNDAQUIL', 20);
+    builder.addTeamMember(teamId, 'SPECIES_CYNDAQUIL'); // links the unused Box Entry
+    expect(builder.getTeam(teamId).members.map((m) => m.boxEntry?.id)).toEqual([first, second]);
+
+    // The same Box Entry may back a Team Member on another Team.
+    const otherTeamId = builder.createTeam('Other');
+    builder.addTeamMember(otherTeamId, 'SPECIES_CYNDAQUIL', first);
+    expect(builder.getTeam(otherTeamId).members[0]!.boxEntry?.id).toBe(first);
   });
 
   it('switching mode keeps existing Team Members; Box Mode restrictions apply only when adding', () => {
@@ -185,20 +209,23 @@ describe('Box Mode and Dex Mode', () => {
 });
 
 describe('Team Members chosen from a Box Entry', () => {
-  function boxTeam() {
+  // A Cyndaquil Team Member and a Typhlosion one (a Planned Evolution), both from one Box Entry, on two Teams.
+  function boxTeams() {
     const builder = newBuilder();
     const teamId = builder.getActiveTeamId();
     const entryId = builder.addBoxEntry('SPECIES_CYNDAQUIL', 10);
     builder.setMode('BOX');
     builder.addTeamMember(teamId, 'SPECIES_CYNDAQUIL');
-    builder.addTeamMember(teamId, 'SPECIES_TYPHLOSION');
-    return { builder, teamId, entryId };
+    const otherTeamId = builder.createTeam('Other');
+    builder.addTeamMember(otherTeamId, 'SPECIES_TYPHLOSION');
+    const members = () => [...builder.getTeam(teamId).members, ...builder.getTeam(otherTeamId).members];
+    return { builder, entryId, members };
   }
 
-  it('stay on the Team, unlinked from the Box, when their Box Entry is removed', () => {
-    const { builder, teamId, entryId } = boxTeam();
+  it('stay on their Teams, unlinked from the Box, when their Box Entry is removed', () => {
+    const { builder, entryId, members: membersNow } = boxTeams();
     builder.removeBoxEntry(entryId);
-    const members = builder.getTeam(teamId).members;
+    const members = membersNow();
     expect(members.map((m) => [m.species.displayName, m.boxEntry, m.plannedEvolution])).toEqual([
       ['Cyndaquil', null, null],
       ['Typhlosion', null, null],
@@ -206,18 +233,18 @@ describe('Team Members chosen from a Box Entry', () => {
   });
 
   it("follow their Box Entry's evolution: still-later evolutions stay Planned, others are unlinked", () => {
-    const { builder, teamId, entryId } = boxTeam();
+    const { builder, entryId, members } = boxTeams();
     builder.setBoxEntrySpecies(entryId, 'SPECIES_QUILAVA');
-    const [cyndaquil, typhlosion] = builder.getTeam(teamId).members;
+    const [cyndaquil, typhlosion] = members();
     expect(cyndaquil!.boxEntry).toBeNull();
     expect(typhlosion!.boxEntry?.id).toBe(entryId);
     expect(typhlosion!.plannedEvolution?.label).toBe('Lv 36');
 
     builder.setBoxEntrySpecies(entryId, 'SPECIES_TYPHLOSION');
-    expect(builder.getTeam(teamId).members[1]!.plannedEvolution).toBeNull();
+    expect(members()[1]!.plannedEvolution).toBeNull();
     // Changing it back does not relink the Cyndaquil Team Member.
     builder.setBoxEntrySpecies(entryId, 'SPECIES_CYNDAQUIL');
-    expect(builder.getTeam(teamId).members[0]!.boxEntry).toBeNull();
+    expect(members()[0]!.boxEntry).toBeNull();
   });
 });
 
@@ -233,6 +260,7 @@ describe('Level-up moves above the Box Entry level', () => {
     const builder = newBuilder();
     const teamId = builder.getActiveTeamId();
     builder.addBoxEntry('SPECIES_CYNDAQUIL', 10);
+    builder.addBoxEntry('SPECIES_CYNDAQUIL', 10);
     builder.setMode('BOX');
     builder.addTeamMember(teamId, 'SPECIES_CYNDAQUIL');
     builder.addTeamMember(teamId, 'SPECIES_TYPHLOSION');
@@ -242,11 +270,20 @@ describe('Level-up moves above the Box Entry level', () => {
     expect(cyndaquil.flag('MOVE_EMBER')).toBe(false); // Lv 7
     expect(cyndaquil.flag('MOVE_FLAME_WHEEL')).toBe(true); // Lv 19
     expect(cyndaquil.flag('MOVE_BODY_SLAM')).toBe(false); // tutor only
+    expect(cyndaquil.flag('MOVE_FLAMETHROWER')).toBe(false); // Lv 40, but also TM35: available now
 
     // A Planned Evolution compares its own learnset with the Box Entry's current level.
     const typhlosion = flagged(builder, teamId, 1);
-    expect(typhlosion.flag('MOVE_FLAMETHROWER')).toBe(true); // Lv 48
+    expect(typhlosion.flag('MOVE_ERUPTION')).toBe(true); // level-up only, above Lv 10
+    expect(typhlosion.flag('MOVE_FLAMETHROWER')).toBe(false); // Lv 48, but also TM35
     expect(typhlosion.flag('MOVE_EMBER')).toBe(false); // Lv 1
+  });
+
+  it('are not listed for an unknown Team Member', () => {
+    const builder = newBuilder();
+    expect(() => builder.getTeamMemberLearnableMoves(builder.getActiveTeamId(), 'nobody')).toThrow(
+      expect.objectContaining({ code: 'UNKNOWN_TEAM_MEMBER' }),
+    );
   });
 
   it('are not flagged without a Box Entry level, or in Dex Mode', () => {

@@ -14,6 +14,8 @@ export function BoxMemberPicker({ teamId, disabled }: { teamId: TeamId; disabled
     .getBoxCandidates()
     .filter((c) => words.every((w) => c.species.displayName.toLowerCase().includes(w)));
   const levelOf = (boxEntryId: string) => box.find((e) => e.id === boxEntryId)?.level ?? null;
+  // A Box Entry backs at most one Team Member per Team.
+  const used = new Set(builder.getTeam(teamId).members.flatMap((m) => (m.boxEntry ? [m.boxEntry.id] : [])));
 
   if (box.length === 0) {
     return <p className="muted box-member-picker">Box Mode: add Box Entries to the Box to choose Team Members.</p>;
@@ -34,10 +36,13 @@ export function BoxMemberPicker({ teamId, disabled }: { teamId: TeamId; disabled
         <ul className="search-results">
           {candidates.map((c) => {
             const level = levelOf(c.boxEntryId);
+            const inUse = used.has(c.boxEntryId);
             return (
               <li key={`${c.boxEntryId}-${c.species.id}`}>
                 <button
                   type="button"
+                  disabled={inUse}
+                  title={inUse ? 'This Box Entry is already a Team Member of this Team' : undefined}
                   onMouseDown={(e) => e.preventDefault()} // keep focus so the list stays open until the pick
                   onClick={() => {
                     builder.addTeamMember(teamId, c.species.id, c.boxEntryId);
@@ -53,6 +58,7 @@ export function BoxMemberPicker({ teamId, disabled }: { teamId: TeamId; disabled
                     ) : (
                       <span className="muted">Box Entry{level !== null ? `, Lv ${level}` : ''}</span>
                     )}
+                    {inUse && <span className="muted"> (already on this Team)</span>}
                   </span>
                   <TypeBadges types={c.species.types} />
                 </button>
