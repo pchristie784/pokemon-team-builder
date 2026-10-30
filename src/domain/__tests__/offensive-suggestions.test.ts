@@ -117,7 +117,8 @@ describe('Suggestions for Offensive Coverage gaps', () => {
     const elapsed = performance.now() - start;
     expect(suggestions).toHaveLength(MAX_SUGGESTIONS);
     expect(suggestions.every((s) => s.proposedMoves.length > 0)).toBe(true);
-    expect(elapsed).toBeLessThan(500); // ~160 ms locally; generous for slow CI machines
+    // ~160 ms locally. Shared CI runners are several times slower and noisier, so CI gets more room.
+    expect(elapsed).toBeLessThan(process.env.CI ? 2000 : 500);
   });
 
   it("on a full Team, a replace Suggestion's fixes and introduced problems match the Critique once applied, the replaced member's moves gone", () => {
