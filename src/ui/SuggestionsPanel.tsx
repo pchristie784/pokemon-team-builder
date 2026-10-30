@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { isDomainError, type Suggestion, type TeamId } from '../domain';
+import { isDomainError, typeName, type Suggestion, type TeamId } from '../domain';
 import { TypeBadges } from './TypeBadges';
 import { useTeamBuilder } from './useTeamBuilder';
 
-/** Ranked Suggestions for one Team, each with its reason and a one-action Add or Replace. */
+/** Ranked Suggestions for one Team, each with its reason, proposed moves and a one-action Add or Replace. */
 export function SuggestionsPanel({ teamId }: { teamId: TeamId }) {
   const builder = useTeamBuilder();
   const state = builder.getState();
@@ -45,6 +45,17 @@ export function SuggestionsPanel({ teamId }: { teamId: TeamId }) {
                 </button>
               </div>
               <p className="suggestion-reason">{s.reason}</p>
+              {s.proposedMoves.length > 0 && (
+                <ul className="suggestion-moves">
+                  {s.proposedMoves.map((m) => (
+                    <li key={m.move.id}>
+                      <strong>{m.move.name}</strong> <TypeBadges types={[m.moveType]} />
+                      {m.aboveBoxEntryLevel && <span className="muted"> (above its level)</span>}{' '}
+                      <span className="muted">covers {[...new Set(m.fixes.map((p) => ('type' in p ? typeName(p.type) : '')))].join(', ')}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ol>
